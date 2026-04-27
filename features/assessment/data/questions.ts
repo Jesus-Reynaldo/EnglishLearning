@@ -84,6 +84,14 @@ const speakingQuestions: Question[] = [
       'As a result, ...',
       'In conclusion, this person...',
     ],
+    ipa: [
+      '/aɪd laɪk tə tɔːk əˈbaʊt/',
+      '/ðə ˈriːzən aɪ tʃoʊz ðɪs ˈpɜːrsən ɪz/',
+      '/wʌn weɪ ðeɪ ˈɪnfluənst miː wɒz/',
+      '/fər ɪɡˈzæmpəl/',
+      '/æz ə rɪˈzʌlt/',
+      '/ɪn kənˈkluːʒən ðɪs ˈpɜːrsən/',
+    ],
     time: 45,
   },
 ];

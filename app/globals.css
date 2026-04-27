@@ -1,22 +1,28 @@
 @import "tailwindcss";
 
-/* ─── Design Tokens ─────────────────────────────────────────── */
+/* ─── Design Tokens — "Neo-Academic" ────────────────────────── */
 :root {
-  /* Surfaces */
-  --bg-base:      #F8F5F0;
+  /* Surfaces (zinc scale) */
+  --bg-base:      #FAFAFA;
   --bg-surface:   #FFFFFF;
-  --bg-raised:    #F2EDE4;
+  --bg-raised:    #F4F4F5;
+  --bg-secondary: #F4F4F5;
 
-  /* Text */
-  --text-primary:   #1A1713;
-  --text-secondary: #5C5650;
-  --text-muted:     #9E9690;
+  /* Text (zinc scale) */
+  --text-primary:   #18181B;
+  --text-secondary: #52525B;
+  --text-muted:     #A1A1AA;
 
-  /* Border */
-  --border:       #E3DDD3;
-  --border-soft:  #EDE8E0;
+  /* Border (zinc) */
+  --border:       #E4E4E7;
+  --border-soft:  #F4F4F5;
 
-  /* Skill palette — jewel tones on parchment */
+  /* Accent palette */
+  --primary:  #5522E2;
+  --success:  #059669;
+  --alert:    #F43F5E;
+
+  /* Skill palette — jewel tones */
   --listening:  #2B72B8;
   --structure:  #6B4EC4;
   --reading:    #C04828;
@@ -26,21 +32,21 @@
   --daily:      #5C7424;
 
   /* Feedback */
-  --ok-bg:   #EAF4E6;
-  --ok-text: #1D5C12;
-  --ok-border: rgba(29,92,18,0.25);
-  --err-bg:  #FAE8E4;
-  --err-text:#8C1E10;
-  --err-border: rgba(140,30,16,0.25);
+  --ok-bg:     #ECFDF5;
+  --ok-text:   #059669;
+  --ok-border: rgba(5, 150, 105, 0.25);
+  --err-bg:    #FFF1F2;
+  --err-text:  #E11D48;
+  --err-border: rgba(225, 29, 72, 0.25);
 
   /* XP badge */
-  --xp-bg:   #E6EEF9;
-  --xp-text: #1A4A94;
+  --xp-bg:   #EDE9FE;
+  --xp-text: #5522E2;
 }
 
 @theme inline {
-  --font-display: var(--font-fraunces);
-  --font-sans:    var(--font-outfit);
+  --font-display: var(--font-serif);
+  --font-sans:    var(--font-ui);
   --color-background: var(--bg-base);
   --color-surface: var(--bg-surface);
   --color-listening: var(--listening);
@@ -56,11 +62,10 @@
 
 body {
   background-color: var(--bg-base);
-  /* Dot-grid — evokes academic graph paper */
-  background-image: radial-gradient(circle, #C6BDB4 1px, transparent 1px);
+  background-image: radial-gradient(circle, #D4D4D8 1px, transparent 1px);
   background-size: 22px 22px;
   color: var(--text-primary);
-  font-family: var(--font-sans), 'Outfit', system-ui, sans-serif;
+  font-family: var(--font-ui), 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -71,14 +76,30 @@ body {
   background-image: none;
 }
 
-/* Display font utility */
+/* Typography utilities */
 .font-display {
-  font-family: var(--font-fraunces), 'Georgia', serif;
+  font-family: var(--font-serif), 'Georgia', serif;
+}
+.font-serif {
+  font-family: var(--font-serif), 'Georgia', serif;
+}
+.font-mono-ipa {
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+}
+
+/* Glassmorphism */
+.glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 /* ─── Selection ─────────────────────────────────────────────── */
 ::selection {
-  background: rgba(43,114,184,0.18);
+  background: rgba(85, 34, 226, 0.15);
   color: var(--text-primary);
 }
 
@@ -91,7 +112,6 @@ body {
 }
 
 /* ─── Node texture patterns ─────────────────────────────────── */
-/* Applied via data-type on SkillNode */
 .node-texture-listening {
   background-image: repeating-linear-gradient(
     90deg, rgba(255,255,255,0.12) 0, rgba(255,255,255,0.12) 1px,
@@ -145,5 +165,32 @@ body {
   100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
 }
 
+/* Breathing ring for "current" skill node */
+@keyframes breathe {
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px rgba(85, 34, 226, 0.35),
+      0 4px 16px rgba(85, 34, 226, 0.25);
+  }
+  50% {
+    box-shadow:
+      0 0 0 8px rgba(85, 34, 226, 0.08),
+      0 4px 24px rgba(85, 34, 226, 0.4);
+  }
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position:  200% 0; }
+}
+
 .animate-fade-up  { animation: fadeUp 0.3s ease both; }
 .animate-pop-in   { animation: popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) both; }
+.animate-breathe  { animation: breathe 2.4s ease-in-out infinite; }
+
+.skeleton {
+  background: linear-gradient(90deg, #F4F4F5 25%, #E4E4E7 50%, #F4F4F5 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}

@@ -11,6 +11,7 @@ interface WritingState {
   prompt: string;
   setPrompt: (prompt: string) => void;
   updateParagraph: (step: WizardStep, text: string) => void;
+  setStep: (step: WizardStep) => void;
   nextStep: () => void;
   prevStep: () => void;
   reset: () => void;
@@ -31,6 +32,7 @@ export const useWritingStore = create<WritingState>()(
           updated[step] = text;
           return { paragraphs: updated };
         }),
+      setStep: (step) => set({ currentStep: step }),
       nextStep: () =>
         set((s) => ({ currentStep: Math.min(4, s.currentStep + 1) as WizardStep })),
       prevStep: () =>

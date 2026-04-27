@@ -32,6 +32,7 @@ export type SpeakingQuestion = {
   type: string;
   prompt: string;
   chunks: string[];
+  ipa?: string[];
   time: number;
 };
 

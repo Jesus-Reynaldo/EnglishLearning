@@ -11,8 +11,16 @@ export default function FeedbackBar({ correct, explanation }: Props) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+      animate={
+        correct
+          ? { opacity: 1, y: 0, scale: 1, x: 0 }
+          : { opacity: 1, y: 0, scale: 1, x: [0, -4, 4, -4, 4, -2, 2, 0] }
+      }
+      transition={
+        correct
+          ? { type: 'spring', damping: 20, stiffness: 300 }
+          : { duration: 0.45, ease: 'easeInOut' }
+      }
       className="rounded-2xl mb-4 overflow-hidden"
       style={{
         background: correct ? 'var(--ok-bg)' : 'var(--err-bg)',
