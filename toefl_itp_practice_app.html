@@ -1,0 +1,569 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+  #app { padding: 1.5rem 1rem; max-width: 480px; margin: 0 auto; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .header-stats { display: flex; gap: 16px; align-items: center; }
+  .stat { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 500; color: var(--color-text-secondary); }
+  .stat-icon { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  .flame { background: #ff6b35; color: white; }
+  .gem { background: #1D9E75; color: white; }
+  .heart { background: #e24b4a; color: white; }
+  .stat.xp { color: #378ADD; font-weight: 700; font-size: 14px; }
+
+  .daily-banner { background: #639922; border-radius: var(--border-radius-lg); padding: 14px 18px; margin-bottom: 1.5rem; cursor: pointer; transition: opacity 0.15s; }
+  .daily-banner:hover { opacity: 0.9; }
+  .daily-date { font-size: 11px; font-weight: 500; color: #C0DD97; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+  .daily-title { font-size: 16px; font-weight: 500; color: white; }
+
+  .section-label { font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; margin-top: 8px; }
+
+  .map { display: flex; flex-direction: column; align-items: center; gap: 0; position: relative; }
+  .map-row { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 8px; width: 100%; }
+
+  .node { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; position: relative; user-select: none; }
+  .node:hover { transform: scale(1.05); }
+  .node:active { transform: scale(0.97); }
+  .node.active { box-shadow: 0 0 0 4px rgba(99,153,34,0.3); }
+  .node.locked { opacity: 0.4; cursor: not-allowed; }
+  .node.locked:hover { transform: none; }
+  .node-icon { font-size: 22px; line-height: 1; }
+  .node-label { font-size: 9px; font-weight: 500; color: white; margin-top: 2px; text-align: center; letter-spacing: 0.03em; }
+
+  .node-listening { background: #378ADD; }
+  .node-structure { background: #7F77DD; }
+  .node-reading { background: #D85A30; }
+  .node-writing { background: #1D9E75; }
+  .node-speaking { background: #D4537E; }
+  .node-mixed { background: #BA7517; }
+
+  .node-connector { width: 3px; height: 28px; background: var(--color-border-tertiary); border-radius: 2px; margin: 0 auto; }
+
+  .tooltip-box { position: absolute; bottom: 90%; left: 50%; transform: translateX(-50%); background: var(--color-text-primary); color: var(--color-background-primary); font-size: 12px; padding: 6px 12px; border-radius: 8px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 10; }
+  .node:hover .tooltip-box { opacity: 1; }
+  .tooltip-box::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--color-text-primary); }
+
+  .progress-ring { position: absolute; top: -4px; left: -4px; width: 80px; height: 80px; pointer-events: none; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: flex-end; justify-content: center; z-index: 100; }
+  .modal { background: var(--color-background-primary); border-radius: 20px 20px 0 0; padding: 2rem 1.5rem; width: 100%; max-width: 480px; animation: slideUp 0.2s ease; }
+  @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal h2 { font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 6px; }
+  .modal p { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1.5rem; line-height: 1.6; }
+  .modal-actions { display: flex; gap: 10px; }
+  .btn-primary { flex: 1; padding: 14px; border-radius: var(--border-radius-lg); border: none; font-size: 15px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+  .btn-cancel { padding: 14px 20px; border-radius: var(--border-radius-lg); border: 1.5px solid var(--color-border-secondary); background: transparent; font-size: 15px; color: var(--color-text-secondary); cursor: pointer; }
+
+  .question-screen { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .q-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; }
+  .q-back { background: transparent; border: none; font-size: 20px; cursor: pointer; color: var(--color-text-secondary); padding: 4px; }
+  .q-progress { flex: 1; height: 8px; background: var(--color-border-tertiary); border-radius: 4px; overflow: hidden; }
+  .q-progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+  .q-type { font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .q-text { font-size: 17px; font-weight: 500; color: var(--color-text-primary); line-height: 1.5; margin-bottom: 1.5rem; }
+  .q-context { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 14px 16px; margin-bottom: 1.5rem; font-size: 14px; color: var(--color-text-secondary); line-height: 1.6; border-left: 3px solid var(--color-border-secondary); font-style: italic; }
+  .q-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem; }
+  .q-option { padding: 14px 16px; border-radius: var(--border-radius-lg); border: 1.5px solid var(--color-border-secondary); background: var(--color-background-primary); font-size: 15px; color: var(--color-text-primary); cursor: pointer; transition: all 0.12s; text-align: left; }
+  .q-option:hover { border-color: var(--color-border-primary); background: var(--color-background-secondary); }
+  .q-option.selected { border-color: #378ADD; background: #E6F1FB; color: #185FA5; }
+  .q-option.correct { border-color: #3B6D11; background: #EAF3DE; color: #3B6D11; }
+  .q-option.wrong { border-color: #993C1D; background: #FAECE7; color: #993C1D; }
+
+  .q-submit { width: 100%; padding: 16px; border-radius: var(--border-radius-lg); border: none; font-size: 16px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+  .q-submit:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .feedback-bar { padding: 16px; border-radius: var(--border-radius-lg); margin-bottom: 1rem; display: flex; align-items: flex-start; gap: 12px; }
+  .feedback-bar.correct { background: #EAF3DE; }
+  .feedback-bar.wrong { background: #FAECE7; }
+  .feedback-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .feedback-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .feedback-bar.correct .feedback-title { color: #3B6D11; }
+  .feedback-bar.wrong .feedback-title { color: #993C1D; }
+  .feedback-text { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+
+  .writing-area { width: 100%; min-height: 140px; padding: 14px; border-radius: var(--border-radius-lg); border: 1.5px solid var(--color-border-secondary); background: var(--color-background-primary); font-size: 15px; color: var(--color-text-primary); font-family: var(--font-sans); resize: none; outline: none; line-height: 1.6; }
+  .writing-area:focus { border-color: #1D9E75; }
+  .word-count { font-size: 12px; color: var(--color-text-tertiary); text-align: right; margin-top: 6px; margin-bottom: 1rem; }
+
+  .speaking-box { border: 1.5px solid var(--color-border-secondary); border-radius: var(--border-radius-lg); padding: 1.5rem; text-align: center; margin-bottom: 1.5rem; }
+  .speak-btn { width: 72px; height: 72px; border-radius: 50%; border: none; font-size: 28px; cursor: pointer; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
+  .speak-btn:hover { transform: scale(1.08); }
+  .speak-btn.idle { background: #D4537E; }
+  .speak-btn.recording { background: #E24B4A; animation: pulse 0.8s infinite alternate; }
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.12); } }
+  .speak-label { font-size: 13px; color: var(--color-text-secondary); }
+  .timer { font-size: 22px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .chunks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1rem; }
+  .chunk-tag { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--color-text-secondary); cursor: pointer; transition: all 0.12s; }
+  .chunk-tag:hover { border-color: #D4537E; color: #D4537E; }
+
+  .results-screen { text-align: center; padding: 2rem 0; animation: fadeIn 0.3s ease; }
+  .results-icon { font-size: 56px; margin-bottom: 1rem; }
+  .results-score { font-size: 42px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .results-label { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1.5rem; }
+  .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.5rem; text-align: left; }
+  .results-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px; }
+  .results-card-label { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 3px; }
+  .results-card-val { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
+
+  .xp-badge { display: inline-flex; align-items: center; gap: 6px; background: #E6F1FB; border-radius: 20px; padding: 6px 16px; font-size: 14px; font-weight: 500; color: #185FA5; margin-bottom: 1.5rem; }
+</style>
+
+<div id="app">
+  <h2 class="sr-only">TOEFL ITP Practice App — Duolingo-style skill map</h2>
+</div>
+
+<script>
+const state = {
+  screen: 'map',
+  xp: 1259,
+  streak: 130,
+  hearts: 3,
+  selectedNode: null,
+  currentQ: 0,
+  selectedOption: null,
+  answered: false,
+  score: 0,
+  total: 0,
+  speakingRecording: false,
+  speakingTimer: 45,
+  speakingInterval: null,
+  writingText: '',
+  showFeedback: false,
+  feedbackCorrect: false,
+  aiFeedback: '',
+  loading: false
+};
+
+const nodes = [
+  { id: 'l1', type: 'listening', label: 'Short Talks', icon: '🎧', color: 'node-listening', tooltip: 'Part A — Short Dialogues', unlocked: true, progress: 0.85 },
+  { id: 's1', type: 'structure', label: 'Grammar', icon: '🔷', color: 'node-structure', tooltip: 'Structure & Written Expr.', unlocked: true, progress: 0.6 },
+  { id: 'r1', type: 'reading', label: 'Reading', icon: '📖', color: 'node-reading', tooltip: 'Reading Comprehension', unlocked: true, progress: 0.4 },
+  { id: 'w1', type: 'writing', label: 'Writing', icon: '✍️', color: 'node-writing', tooltip: 'TWE — Essay writing', unlocked: true, progress: 0.5 },
+  { id: 'sp1', type: 'speaking', label: 'Speaking', icon: '🎤', color: 'node-speaking', tooltip: 'TSE — Stage 1', unlocked: true, progress: 0.3 },
+  { id: 'l2', type: 'listening', label: 'Long Talks', icon: '🎧', color: 'node-listening', tooltip: 'Part B — Conversations', unlocked: false, progress: 0 },
+  { id: 'm1', type: 'mixed', label: 'Full Drill', icon: '⚡', color: 'node-mixed', tooltip: 'Mixed practice', unlocked: false, progress: 0 },
+];
+
+const questions = {
+  listening: [
+    { type: 'Listening — Part A', context: 'M: "I can\'t believe how much the rent has gone up this year."\nW: "Tell me about it. My landlord wants 20% more next month."', q: 'What are these people talking about?', options: ['A job promotion', 'Increasing housing costs', 'A new neighborhood', 'Their monthly bills'], answer: 1, exp: 'The conversation is about rising rent — a classic TOEFL indirect complaint.' },
+    { type: 'Listening — Negation', context: 'W: "Did you finish the assignment before class?"\nM: "I wish I had, but I didn\'t quite manage it."', q: 'What does the man mean?', options: ['He finished the assignment', 'He did not finish the assignment', 'He was in class', 'He forgot about the assignment'], answer: 1, exp: '"I didn\'t quite manage it" = negative result despite trying (Skill 7 — negation).' },
+  ],
+  structure: [
+    { type: 'Structure', q: 'Choose the correct sentence:', options: ['Seldom we have seen such a result.', 'Seldom have we seen such a result.', 'Seldom we did see such a result.', 'Seldom seen have we such a result.'], answer: 1, exp: 'After "Seldom" (negative adverb) the auxiliary verb comes before the subject — inversion structure.' },
+    { type: 'Structure', q: 'Choose the word that best completes the sentence: "The professor\'s lecture was so ______ that many students fell asleep."', options: ['stimulating', 'engaging', 'monotonous', 'challenging'], answer: 2, exp: '"Monotonous" fits: a boring lecture → students fell asleep. Cause-and-effect logic.' },
+  ],
+  reading: [
+    { type: 'Reading — Main Idea', context: 'Urban heat islands occur when cities experience higher temperatures than surrounding rural areas. This effect is caused by dark surfaces, lack of vegetation, and waste heat from vehicles and buildings. The phenomenon worsens air quality and increases energy consumption.', q: 'What is the main idea of this passage?', options: ['Cities are always hotter than rural areas', 'Urban heat islands are caused by human activity and have negative effects', 'Trees reduce temperatures in cities', 'Energy use is the main cause of pollution'], answer: 1, exp: 'Main idea = the cause and impact of urban heat islands. Option B covers both aspects.' },
+  ],
+  writing: [
+    { type: 'Writing — TWE', prompt: 'Some people believe that technology has made life easier. Others argue it has made life more complicated. Which view do you agree with? Use specific reasons and examples.', minWords: 80 },
+  ],
+  speaking: [
+    { type: 'Speaking — TSE Stage 1', prompt: 'Talk about a person who has had a significant influence on your life. Describe who they are and explain how they influenced you.', chunks: ['I\'d like to talk about...', 'The reason I chose this person is...', 'One way they influenced me was...', 'For example, ...', 'As a result, ...', 'In conclusion, this person...'], time: 45 },
+  ],
+};
+
+function getQBank(nodeType) {
+  if (nodeType === 'writing') return questions.writing;
+  if (nodeType === 'speaking') return questions.speaking;
+  if (nodeType === 'listening') return questions.listening;
+  if (nodeType === 'structure') return questions.structure;
+  if (nodeType === 'reading') return questions.reading;
+  return [...questions.listening, ...questions.structure, ...questions.reading];
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if (state.screen === 'map') renderMap(app);
+  else if (state.screen === 'modal') renderModal(app);
+  else if (state.screen === 'question') renderQuestion(app);
+  else if (state.screen === 'results') renderResults(app);
+}
+
+function renderMap(app) {
+  const today = new Date();
+  const day = today.getDate();
+  const months = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-stats">
+        <div class="stat">
+          <div class="stat-icon flame">🔥</div>
+          <span>${state.streak}</span>
+        </div>
+        <div class="stat">
+          <div class="stat-icon gem">💎</div>
+          <span>925</span>
+        </div>
+      </div>
+      <div class="stat xp">✦ ${state.xp} XP</div>
+      <div class="stat">
+        <div class="stat-icon heart">❤</div>
+        <span>${state.hearts}</span>
+      </div>
+    </div>
+    <div class="daily-banner" onclick="openDaily()">
+      <div class="daily-date">${day} DE ${months[today.getMonth()]}</div>
+      <div class="daily-title">🎯 Practica para el TOEFL ITP</div>
+    </div>
+    <div class="section-label">Mapa de secciones</div>
+    <div class="map">
+      <div class="map-row">
+        ${nodeHTML(nodes[0])}
+      </div>
+      <div class="node-connector"></div>
+      <div class="map-row">
+        ${nodeHTML(nodes[4])}
+        ${nodeHTML(nodes[1])}
+      </div>
+      <div class="node-connector"></div>
+      <div class="map-row">
+        ${nodeHTML(nodes[2])}
+        ${nodeHTML(nodes[3])}
+      </div>
+      <div class="node-connector"></div>
+      <div class="map-row">
+        ${nodeHTML(nodes[5])}
+      </div>
+      <div class="node-connector"></div>
+      <div class="map-row">
+        ${nodeHTML(nodes[6])}
+      </div>
+    </div>
+  `;
+  app.querySelectorAll('.node:not(.locked)').forEach(el => {
+    el.addEventListener('click', () => selectNode(el.dataset.id));
+  });
+}
+
+function nodeHTML(n) {
+  const pct = Math.round(n.progress * 100);
+  const r = 36; const circ = 2 * Math.PI * r;
+  const dash = n.progress * circ;
+  return `
+    <div class="node ${n.color} ${n.unlocked ? '' : 'locked'}" data-id="${n.id}">
+      <svg class="progress-ring" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="${r}" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="4"/>
+        ${n.progress > 0 ? `<circle cx="40" cy="40" r="${r}" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="4" stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ * 0.25}" stroke-linecap="round"/>` : ''}
+      </svg>
+      <div class="node-icon">${n.icon}</div>
+      <div class="node-label">${n.label}</div>
+      <div class="tooltip-box">${n.tooltip}</div>
+    </div>`;
+}
+
+function selectNode(id) {
+  state.selectedNode = nodes.find(n => n.id === id);
+  state.screen = 'modal';
+  render();
+}
+
+function openDaily() {
+  state.selectedNode = { ...nodes[0], label: 'Práctica Diaria', type: 'listening', tooltip: 'Listening + Grammar' };
+  state.screen = 'modal';
+  render();
+}
+
+function renderModal(app) {
+  const n = state.selectedNode;
+  const typeColors = { listening: '#378ADD', structure: '#7F77DD', reading: '#D85A30', writing: '#1D9E75', speaking: '#D4537E', mixed: '#BA7517' };
+  const color = typeColors[n.type] || '#378ADD';
+  app.innerHTML = `
+    <div class="modal-overlay">
+      <div class="modal">
+        <h2>${n.icon || '🎯'} ${n.label || 'Práctica Diaria'}</h2>
+        <p>${n.tooltip || 'Practica esta sección del TOEFL ITP'}</p>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+          <button class="btn-primary" style="background:${color};color:white;" onclick="startPractice()">Empezar</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function closeModal() { state.screen = 'map'; render(); }
+
+function startPractice() {
+  state.screen = 'question';
+  state.currentQ = 0;
+  state.score = 0;
+  state.answered = false;
+  state.selectedOption = null;
+  state.showFeedback = false;
+  state.aiFeedback = '';
+  state.writingText = '';
+  const bank = getQBank(state.selectedNode.type);
+  state.qbank = bank;
+  state.total = bank.length;
+  render();
+}
+
+function renderQuestion(app) {
+  const bank = state.qbank;
+  if (state.currentQ >= bank.length) { showResults(app); return; }
+  const q = bank[state.currentQ];
+  const pct = Math.round((state.currentQ / bank.length) * 100);
+  const typeColors = { listening: '#378ADD', structure: '#7F77DD', reading: '#D85A30', writing: '#1D9E75', speaking: '#D4537E' };
+  const fillColor = typeColors[state.selectedNode.type] || '#378ADD';
+
+  if (q.type.includes('Writing')) { renderWritingQ(app, q, pct, fillColor); return; }
+  if (q.type.includes('Speaking')) { renderSpeakingQ(app, q, pct, fillColor); return; }
+
+  let optionsHTML = q.options.map((o, i) => {
+    let cls = 'q-option';
+    if (state.answered) {
+      if (i === q.answer) cls += ' correct';
+      else if (i === state.selectedOption && i !== q.answer) cls += ' wrong';
+    } else if (i === state.selectedOption) cls += ' selected';
+    return `<button class="q-option ${cls.replace('q-option','').trim()}" onclick="selectOption(${i})">${o}</button>`;
+  }).join('');
+
+  let feedbackHTML = '';
+  if (state.showFeedback) {
+    feedbackHTML = `<div class="feedback-bar ${state.feedbackCorrect ? 'correct' : 'wrong'}">
+      <div class="feedback-icon">${state.feedbackCorrect ? '✓' : '✗'}</div>
+      <div><div class="feedback-title">${state.feedbackCorrect ? '¡Correcto!' : 'Respuesta incorrecta'}</div>
+      <div class="feedback-text">${q.exp}</div></div>
+    </div>`;
+  }
+
+  app.innerHTML = `
+    <div class="question-screen">
+      <div class="q-header">
+        <button class="q-back" onclick="backToMap()">✕</button>
+        <div class="q-progress"><div class="q-progress-fill" style="width:${pct}%;background:${fillColor};"></div></div>
+        <span style="font-size:13px;color:var(--color-text-tertiary);min-width:32px;text-align:right">${state.currentQ+1}/${bank.length}</span>
+      </div>
+      <div class="q-type">${q.type}</div>
+      ${q.context ? `<div class="q-context">${q.context.replace(/\n/g,'<br>')}</div>` : ''}
+      <div class="q-text">${q.q}</div>
+      <div class="q-options">${optionsHTML}</div>
+      ${feedbackHTML}
+      <button class="q-submit" style="background:${fillColor};color:white;" ${!state.answered && state.selectedOption === null ? 'disabled' : ''} onclick="submitOrNext()">
+        ${state.answered ? (state.currentQ < bank.length - 1 ? 'Siguiente →' : 'Ver resultados') : 'Comprobar'}
+      </button>
+    </div>`;
+}
+
+function renderWritingQ(app, q, pct, fillColor) {
+  const words = state.writingText.trim().split(/\s+/).filter(Boolean).length;
+  const ok = words >= (q.minWords || 80);
+
+  let feedbackHTML = '';
+  if (state.showFeedback && state.aiFeedback) {
+    feedbackHTML = `<div class="feedback-bar correct">
+      <div class="feedback-icon">✓</div>
+      <div><div class="feedback-title">Retroalimentación IA</div>
+      <div class="feedback-text">${state.aiFeedback}</div></div>
+    </div>`;
+  }
+
+  app.innerHTML = `
+    <div class="question-screen">
+      <div class="q-header">
+        <button class="q-back" onclick="backToMap()">✕</button>
+        <div class="q-progress"><div class="q-progress-fill" style="width:${pct}%;background:${fillColor};"></div></div>
+      </div>
+      <div class="q-type">${q.type}</div>
+      <div class="q-text">${q.prompt}</div>
+      ${!state.answered ? `
+        <textarea class="writing-area" id="essay" placeholder="Write your essay here..." oninput="updateWriting(this.value)">${state.writingText}</textarea>
+        <div class="word-count">${words} / ${q.minWords} palabras mínimas</div>
+      ` : `<div class="q-context" style="max-height:160px;overflow-y:auto;">${state.writingText}</div>`}
+      ${feedbackHTML}
+      ${state.loading ? `<div style="text-align:center;padding:1rem;color:var(--color-text-secondary);font-size:14px;">Analizando tu essay... ✦</div>` : ''}
+      <button class="q-submit" style="background:${fillColor};color:white;" ${!ok && !state.answered ? 'disabled' : ''} onclick="${state.answered ? 'nextQuestion()' : 'submitWriting()'}">
+        ${state.answered ? (state.currentQ < state.qbank.length - 1 ? 'Siguiente →' : 'Ver resultados') : 'Enviar essay'}
+      </button>
+    </div>`;
+}
+
+function renderSpeakingQ(app, q, pct, fillColor) {
+  const chunksHTML = q.chunks.map(c => `<span class="chunk-tag" onclick="insertChunk('${c}')">${c}</span>`).join('');
+  const timerDisplay = state.speakingRecording ? state.speakingTimer : q.time;
+  const btnClass = state.speakingRecording ? 'recording' : 'idle';
+
+  let feedbackHTML = '';
+  if (state.showFeedback && state.aiFeedback) {
+    feedbackHTML = `<div class="feedback-bar correct">
+      <div class="feedback-icon">✓</div>
+      <div><div class="feedback-title">Feedback IA</div>
+      <div class="feedback-text">${state.aiFeedback}</div></div>
+    </div>`;
+  }
+
+  app.innerHTML = `
+    <div class="question-screen">
+      <div class="q-header">
+        <button class="q-back" onclick="backToMap()">✕</button>
+        <div class="q-progress"><div class="q-progress-fill" style="width:${pct}%;background:${fillColor};"></div></div>
+      </div>
+      <div class="q-type">${q.type}</div>
+      <div class="q-text">${q.prompt}</div>
+      <div class="speaking-box">
+        <div class="timer">${timerDisplay}s</div>
+        <button class="speak-btn ${btnClass}" onclick="toggleRecording()" style="${state.answered ? 'opacity:0.4;pointer-events:none;' : ''}">
+          ${state.speakingRecording ? '⏹' : '🎤'}
+        </button>
+        <div class="speak-label">${state.speakingRecording ? 'Grabando... toca para detener' : state.answered ? 'Práctica completada' : 'Toca para hablar'}</div>
+      </div>
+      <div style="font-size:12px;color:var(--color-text-tertiary);margin-bottom:8px;">Chunks útiles — toca para ver:</div>
+      <div class="chunks">${chunksHTML}</div>
+      ${feedbackHTML}
+      ${state.loading ? `<div style="text-align:center;padding:1rem;color:var(--color-text-secondary);font-size:14px;">Generando tips... ✦</div>` : ''}
+      ${state.answered ? `<button class="q-submit" style="background:${fillColor};color:white;margin-top:1rem;" onclick="nextQuestion()">${state.currentQ < state.qbank.length - 1 ? 'Siguiente →' : 'Ver resultados'}</button>` : ''}
+    </div>`;
+}
+
+function selectOption(i) {
+  if (state.answered) return;
+  state.selectedOption = i;
+  render();
+}
+
+function updateWriting(val) {
+  state.writingText = val;
+  const words = val.trim().split(/\s+/).filter(Boolean).length;
+  const wc = document.querySelector('.word-count');
+  const q = state.qbank[state.currentQ];
+  if (wc) wc.textContent = `${words} / ${q.minWords} palabras mínimas`;
+  const btn = document.querySelector('.q-submit');
+  if (btn) btn.disabled = words < (q.minWords || 80);
+}
+
+async function submitWriting() {
+  state.loading = true; render();
+  const q = state.qbank[state.currentQ];
+  const feedback = await getAIFeedback(`You are a TOEFL ITP writing evaluator. The prompt was: "${q.prompt}". The student wrote: "${state.writingText}". Give 2-3 sentences of specific, actionable feedback focusing on: thesis clarity, transition words, and academic vocabulary. Be encouraging but honest. Keep it under 60 words.`);
+  state.loading = false;
+  state.answered = true;
+  state.showFeedback = true;
+  state.aiFeedback = feedback;
+  state.score++;
+  render();
+}
+
+function toggleRecording() {
+  if (state.speakingRecording) {
+    clearInterval(state.speakingInterval);
+    state.speakingRecording = false;
+    getSpeakingFeedback();
+  } else {
+    const q = state.qbank[state.currentQ];
+    state.speakingTimer = q.time;
+    state.speakingRecording = true;
+    render();
+    state.speakingInterval = setInterval(() => {
+      state.speakingTimer--;
+      const timerEl = document.querySelector('.timer');
+      if (timerEl) timerEl.textContent = state.speakingTimer + 's';
+      if (state.speakingTimer <= 0) {
+        clearInterval(state.speakingInterval);
+        state.speakingRecording = false;
+        getSpeakingFeedback();
+      }
+    }, 1000);
+  }
+}
+
+async function getSpeakingFeedback() {
+  state.loading = true; render();
+  const q = state.qbank[state.currentQ];
+  const feedback = await getAIFeedback(`You are a TOEFL TSE speaking coach. The student just practiced this prompt: "${q.prompt}". Give 2-3 specific tips for this topic focusing on: using chunk phrases naturally, avoiding simple "I usually + verb" structures, and pronunciation of key words. Encourage them to use varied vocabulary. Under 60 words.`);
+  state.loading = false;
+  state.answered = true;
+  state.showFeedback = true;
+  state.aiFeedback = feedback;
+  state.score++;
+  render();
+}
+
+function insertChunk(text) {
+  alert(`Chunk: "${text}"\n\nÚsalo al inicio de tu respuesta.`);
+}
+
+async function getAIFeedback(prompt) {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    return data.content?.[0]?.text || 'Keep practicing — you are improving!';
+  } catch {
+    return 'Great effort! Focus on using varied vocabulary and complete sentences.';
+  }
+}
+
+function submitOrNext() {
+  if (!state.answered) {
+    const q = state.qbank[state.currentQ];
+    state.answered = true;
+    state.showFeedback = true;
+    state.feedbackCorrect = state.selectedOption === q.answer;
+    if (state.feedbackCorrect) state.score++;
+    render();
+  } else {
+    nextQuestion();
+  }
+}
+
+function nextQuestion() {
+  state.currentQ++;
+  state.answered = false;
+  state.selectedOption = null;
+  state.showFeedback = false;
+  state.aiFeedback = '';
+  state.writingText = '';
+  state.speakingRecording = false;
+  clearInterval(state.speakingInterval);
+  if (state.currentQ >= state.qbank.length) { state.screen = 'results'; }
+  render();
+}
+
+function showResults(app) { state.screen = 'results'; render(); }
+
+function renderResults(app) {
+  const pct = Math.round((state.score / state.total) * 100);
+  const gained = state.score * 10;
+  state.xp += gained;
+  const emoji = pct >= 80 ? '🏆' : pct >= 60 ? '🎯' : '💪';
+  const msg = pct >= 80 ? '¡Excelente trabajo!' : pct >= 60 ? '¡Buen progreso!' : '¡Sigue practicando!';
+  app.innerHTML = `
+    <div class="results-screen">
+      <div class="results-icon">${emoji}</div>
+      <div class="results-score">${pct}%</div>
+      <div class="results-label">${msg}</div>
+      <div class="xp-badge">✦ +${gained} XP ganados</div>
+      <div class="results-grid">
+        <div class="results-card"><div class="results-card-label">Correctas</div><div class="results-card-val" style="color:#3B6D11;">${state.score}/${state.total}</div></div>
+        <div class="results-card"><div class="results-card-label">XP total</div><div class="results-card-val" style="color:#378ADD;">${state.xp}</div></div>
+        <div class="results-card"><div class="results-card-label">Racha</div><div class="results-card-val">🔥 ${state.streak}</div></div>
+        <div class="results-card"><div class="results-card-label">Nivel</div><div class="results-card-val">B2+</div></div>
+      </div>
+      <button class="q-submit" style="background:#639922;color:white;margin-bottom:10px;" onclick="backToMap()">Volver al mapa</button>
+      <br>
+      <button class="btn-cancel" style="width:100%;margin-top:8px;" onclick="sendPrompt('Dame una pregunta más difícil de ${state.selectedNode?.type || 'listening'} para TOEFL ITP')">Más preguntas ↗</button>
+    </div>`;
+}
+
+function backToMap() {
+  clearInterval(state.speakingInterval);
+  state.speakingRecording = false;
+  state.screen = 'map';
+  render();
+}
+
+render();
+</script>
